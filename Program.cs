@@ -18,7 +18,7 @@ namespace OrderProcessingWorker
 
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.File("logs/log.txt", 
+                .WriteTo.File("logs/log.txt",
                     restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
                     rollingInterval: RollingInterval.Day)
                 .WriteTo.File("logs/errorlog.txt", restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning)
@@ -31,9 +31,9 @@ namespace OrderProcessingWorker
                 var host = CreateHostBuilder(args).Build();
                 host.Services.UseScheduler(scheduler =>
                 {
-                    var jobSchedule = scheduler.Schedule<ProcessOrder>();
+                    var jobSchedule = scheduler.Schedule<ProcessExcel>();
                     jobSchedule
-                        .EverySeconds(2)
+                        .EveryFiveMinutes()
                         .PreventOverlapping("ProcessOrderJob");
                 });
 
@@ -61,13 +61,13 @@ namespace OrderProcessingWorker
                     var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS");
 
                     services
-                        .AddFluentEmail("hello@morrotec.co.uk")
+                        .AddFluentEmail("default@FROM.email", "default FROM name")
                         .AddRazorRenderer()
                         .AddSmtpSender(smtpHost, 587, smtpUser, smtpPass);
-                        
-                    services.AddSingleton<IOrderConnector, OrderQueueConnector>();
+
+                    services.AddSingleton<IJobConnector<ExcelImportJob>, ExcelJobConnector>();
                     services.AddScheduler();
-                    services.AddTransient<ProcessOrder>();
+                    services.AddTransient<ProcessExcel>();
                 });
         }
     }
